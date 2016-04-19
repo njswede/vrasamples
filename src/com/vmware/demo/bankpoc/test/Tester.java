@@ -1,5 +1,6 @@
 package com.vmware.demo.bankpoc.test;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +12,7 @@ import com.vmware.vcac.authentication.rest.stubs.Subtenant;
 import com.vmware.vcac.catalog.rest.stubs.CatalogItem;
 import com.vmware.vcac.catalog.rest.stubs.CatalogResourceView;
 import com.vmware.vcac.catalog.rest.stubs.ConsumerResourceOperation;
+import com.vmware.vcac.catalog.rest.stubs.Request;
 import com.vmware.vcac.catalog.rest.stubs.v7_0.CatalogResource;
 import com.vmware.vcac.reservation.rest.stubs.ReservationPolicy;
 
@@ -41,20 +43,34 @@ public class Tester {
 	
 	private static void testRequestMachine(POCClient client, String tenant, String catalogItemName, String reservationPolicyName, String ou, String affinityGroup) {
 		System.out.println("\n***** Request machine *****");
+		
+		// Look up the catalog item
+		//
 		Collection<CatalogItem> items = client.getCatalogItems(catalogItemName, 1);
 		CatalogItem item = items.iterator().next();
 		String policyId = null;
+		
+		// Look up reservation policy if it was specified.
+		//
 		if(reservationPolicyName != null) {
 			Collection<ReservationPolicy> policies = client.getReservationPolicies(reservationPolicyName, 1);
 			ReservationPolicy policy = policies.iterator().next();
 		}
+		
+		// Set up configuration
+		//
 		HashMap<String, MachineConfiguration> config = new HashMap<String, MachineConfiguration>();
 		config.put("vSphere_Machine_1", new MachineConfiguration(2, 1024, 60, policyId));
 		Map<String, Object> props = new HashMap<String, Object>();
-		props.put("Hostname", "test123");
+		//props.put("Hostname", "test123");
 		props.put("ou", ou);
 		props.put("affinityGroup", affinityGroup);
-		client.requestMachine(item.getId(), null, config, props);
+		
+		// Request the machine
+		//
+		URI rqURI = client.requestMachine(item.getId(), null, config, props);
+		Request rq = client.getRequestFromURI(rqURI);
+		System.out.println("Request: " + rq.getRequestNumber() + " status: " + rq.getStateName());
 	}
 	
 	private static void testGetDay2Operations(POCClient client, String resourceName) {
@@ -63,14 +79,28 @@ public class Tester {
 		CatalogResource resource = resources.iterator().next();
 		Collection<ConsumerResourceOperation> ops = client.getDay2Operations(resource.getId());
 		for(ConsumerResourceOperation op : ops)
-			System.out.println(op.getId() + " " + op.getName() + op.getBindingId());
+			System.out.println(op.getId() + " " + op.getName() + " " + op.getBindingId());
 	}
 	
-	private static void testReconfigureMachine(POCClient client, String machineName, MachineConfiguration config) {
+	private static void testReconfigureMachine(POCClient client, String machineName, MachineConfiguration config) throws InterruptedException {
 		System.out.println("\n***** Reconfigure machine *****");
 		Collection<CatalogResource> resources = client.getCatalogResources(machineName, 1);
 		CatalogResource resource = resources.iterator().next();
 		client.requestMachineChange(resource.getId(), config, true);
+		
+		// Wait for initial phase to finish
+		//
+		for(;;) {
+			Thread.sleep(5000);
+			testGetDay2Operations(client, machineName);
+			if(client.isChangePending(resource.getId()))
+				break;
+		}
+		
+		// Ready for final step! Execute!
+		//
+		//Thread.sleep(30000);
+		//client.finalizeMachineChange(resource.getId());
 	}
 	
 	private static void testGetReservationPolicies(POCClient client) {
@@ -103,7 +133,15 @@ public class Tester {
 		client.requestMachineReprovision(resource.getId());
 	}
 	
-	public static void main(String[] args) {
+	private static void testMigrateStorage(POCClient client, String machineName) {
+		Collection<CatalogResource> resources = client.getCatalogResources(machineName, 1);
+		CatalogResource resource = resources.iterator().next();
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("targetDatastore", "123");
+		client.submitCustomRequest(resource.getId(), "Change storage", data);
+	}
+	
+	public static void main(String[] args) throws Exception {
 		System.out.println("***** Login *****");
 		POCClient client = new POCClient(args[0], args[1], args[2], args[3]);
 		testGetCatalogItems(client); 
@@ -111,10 +149,12 @@ public class Tester {
 		testGetBusinessGroups(client, args[3]);
 		//testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox");
 		testGetDay2Operations(client, "dev-0091"); 
-		testReconfigureMachine(client, "dev-0091", new MachineConfiguration(1, 1024, 60, null));
+		//testReconfigureMachine(client, "dev-0092", new MachineConfiguration(3, 1024, 60, null));
+		testGetDay2Operations(client, "dev-0091"); 
 		//testMachineReprovision(client, "dev-0092");
 		//testDestroyMachine(client, "dev-0100");
 		testGetReservationPolicies(client);
 		testGetMachineInfo(client, "dev-0091");	
+		testMigrateStorage(client, "dev-0091");
 	}
 }

@@ -151,6 +151,24 @@ public class POCClient {
 	}
 	
 	/**
+	 * Returns a day 2 operation on an existing resource based on its resource id and 
+	 * operation name.
+	 * @param resourceId The resource ID
+	 * @param opName The operation name
+	 * @return A day 2 operation
+	 */
+	public ConsumerResourceOperation getDay2OperationByName(String resourceId, String opName) {
+		ConsumerResourceService resourceService = new ConsumerResourceService(catalogClient);
+		Collection<ConsumerResourceOperation> ops = this.getDay2Operations(resourceId);
+		for(ConsumerResourceOperation op : ops) {
+			if(opName.equals(op.getName())) {
+				return op;
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Loads a request based on a URI.
 	 * @param uri The URI of the request to load.
 	 * @return
@@ -206,8 +224,50 @@ public class POCClient {
 		data.put("memory", config.getMemoryMB());
 		data.put("allowForceShutdown", allowShutdown); // Allow shutdown
 		data.put("Cafe.Shim.VirtualMachine.Reconfigure.AllowForceShutdown", allowShutdown ? "True" : "False");
-		data.put("executionSelector", 0); // Immediate shutdown
-		data.put("powerActionSelector", 2); // Power-off allowed
+		data.put("Cafe.Shim.VirtualMachine.Reconfigure.Requestor", 1);
+		//data.put("executionSelector", 1); // Immediate shutdown
+		data.put("powerActionSelector", 0); // Power-off allowed
+		return this.submitResourceRequest(machineId, request);
+	}
+	
+	/**
+	 * Submits a custom request, i.e. an XaaS day 2 operation.
+	 * 
+	 * @param machineId ID of the machine
+	 * @param operationName Name (not ID!) of the operation to run
+	 * @param rqData Additional request data, such as request parameters.
+	 * @return
+	 */
+	public URI submitCustomRequest(String machineId, String operationName, Map<String, Object> rqData) {
+		ConsumerResourceOperation op = this.getDay2OperationByName(machineId, operationName);
+		CatalogResourceRequest request = new CatalogResourceRequest();
+		request.setActionId(op.getId());
+		request.setResourceId(machineId);
+		Map<String, Object> data = request.getData();
+		for(Map.Entry<String, Object> entry : rqData.entrySet()) 
+			data.put(entry.getKey(), entry.getValue());
+		request.setData(data);
+		return this.submitResourceRequest(machineId, request);
+	}
+	
+	/**
+	 * Returns true if a reconfigure machine request is pending.
+	 * 
+	 * @param machineId The machine to check.
+	 * @return
+	 */
+	public boolean isChangePending(String machineId) {
+		return this.getDay2OperationById(machineId, "Infrastructure.Machine.Action.ExecuteReconfigure") != null;
+	}
+	
+	/**
+	 * Finalizes a machine change (not needed of immediate machine reconfigure is requested)
+	 * 
+	 * @param machineId The ID of the machine to reconfigure.
+	 * @return
+	 */
+	public URI finalizeMachineChange(String machineId) {
+		CatalogResourceRequest request = this.getTemplate(machineId, "Infrastructure.Machine.Action.ExecuteReconfigure");
 		return this.submitResourceRequest(machineId, request);
 	}
 	
