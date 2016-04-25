@@ -110,12 +110,12 @@ public class VROPSClient {
 	 * @param ait The AIT
 	 * @return
 	 */
-	public AggregateResourceConsumption getGroupConsumption(String ait) {
+	public AggregateResourceConsumption getGroupConsumption(String tagName, String tagValue) {
 		double totCpu = 0.0;
 		double totMem = 0.0;
 		double totStorage = 0.0;
 		Map<String, ResourceConsumption> machines = new HashMap<String, ResourceConsumption>();
-		ResourceDto res = this.findResourceByName("Environment", "AIT-" + ait);
+		ResourceDto res = this.findResourceByName("Environment", "bac_tag_" + tagName + "-" + tagValue);
 		ResourcesClient rc = vrops.resourcesClient();
 		PageInfo page = new PageInfo(0, 10000, 10000);
 		ResourceRelationDto children = rc.getChildren(res.getIdentifier(), page);

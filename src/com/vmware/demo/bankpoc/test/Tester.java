@@ -69,7 +69,8 @@ public class Tester {
 		//props.put("Hostname", "test123");
 		props.put("ou", ou);
 		props.put("affinityGroup", affinityGroup);
-		props.put("bac_ait", ait);
+		props.put("bac_tag_ait", ait);
+		props.put("bac_tag_ou", ou);
 		
 		// Request the machine
 		//
@@ -154,7 +155,7 @@ public class Tester {
 	
 	private static void testGetGroupConsumption(VROPSClient vrops, String ait) {
 		System.out.println("\n***** Test group resource consumption *****");
-		AggregateResourceConsumption rcs = vrops.getGroupConsumption(ait);
+		AggregateResourceConsumption rcs = vrops.getGroupConsumption("ait", ait);
 		for(Map.Entry<String, ResourceConsumption> entry : rcs.getMachines().entrySet()) {
 			System.out.println(entry.getKey() + " cpu: " + entry.getValue().getCpuMHz() + " memory: " +entry.getValue().getMemoryKB() + " storage: " + entry.getValue().getStorageMB());
 		}
