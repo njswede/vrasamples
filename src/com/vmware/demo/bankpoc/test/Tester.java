@@ -158,6 +158,8 @@ public class Tester {
 		for(Map.Entry<String, ResourceConsumption> entry : rcs.getMachines().entrySet()) {
 			System.out.println(entry.getKey() + " cpu: " + entry.getValue().getCpuMHz() + " memory: " +entry.getValue().getMemoryKB() + " storage: " + entry.getValue().getStorageMB());
 		}
+		ResourceConsumption totals = rcs.getTotals();
+		System.out.println("Totals: " + totals.getCpuMHz() + " memory: " +totals.getMemoryKB() + " storage: " + totals.getStorageMB());
 	}
 	
 	public static void main(String[] args) throws Exception {
