@@ -319,6 +319,10 @@ public class POCClient {
 		return catalogClient.get("/consumer/resourceViews/" + machineId, HashMap.class);
 	}
 	
+	public VROPSClient createVROPSClient(String url, String username, String password) {
+		return new VROPSClient(url, username, password, false);
+	}
+	
 	/**
 	 * Applies machine configuration and custom properties to a provisioning request.
 	 * 
@@ -372,4 +376,6 @@ public class POCClient {
 		payload.put("type", "com.vmware.vcac.catalog.domain.request.CatalogResourceRequest");	
 		return catalogClient.post("consumer/resources/" + machineId + "/actions/" + request.getActionId() + "/requests", payload);
 	}
+	
+	
 }

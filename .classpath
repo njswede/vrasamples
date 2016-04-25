@@ -177,5 +177,6 @@
 	<classpathentry kind="lib" path="/Users/prydin/java-tools/vra7-sdk/xml-resolver.jar"/>
 	<classpathentry kind="lib" path="/Users/prydin/java-tools/vra7-sdk/xmlsec.jar"/>
 	<classpathentry kind="lib" path="/Users/prydin/java-tools/vra7-sdk/xmltooling.jar"/>
+	<classpathentry kind="lib" path="/Users/prydin/java-tools/vcops-suiteapi-client-1.3-all.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

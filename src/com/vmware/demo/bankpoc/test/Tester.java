@@ -3,11 +3,15 @@ package com.vmware.demo.bankpoc.test;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.vmware.demo.bankpoc.client.AggregateResourceConsumption;
 import com.vmware.demo.bankpoc.client.MachineConfiguration;
 import com.vmware.demo.bankpoc.client.POCClient;
+import com.vmware.demo.bankpoc.client.ResourceConsumption;
+import com.vmware.demo.bankpoc.client.VROPSClient;
 import com.vmware.vcac.authentication.rest.stubs.Subtenant;
 import com.vmware.vcac.catalog.rest.stubs.CatalogItem;
 import com.vmware.vcac.catalog.rest.stubs.CatalogResourceView;
@@ -41,7 +45,7 @@ public class Tester {
 		}
 	}
 	
-	private static void testRequestMachine(POCClient client, String tenant, String catalogItemName, String reservationPolicyName, String ou, String affinityGroup) {
+	private static void testRequestMachine(POCClient client, String tenant, String catalogItemName, String reservationPolicyName, String ou, String affinityGroup, String ait) {
 		System.out.println("\n***** Request machine *****");
 		
 		// Look up the catalog item
@@ -65,6 +69,7 @@ public class Tester {
 		//props.put("Hostname", "test123");
 		props.put("ou", ou);
 		props.put("affinityGroup", affinityGroup);
+		props.put("bac_ait", ait);
 		
 		// Request the machine
 		//
@@ -141,13 +146,27 @@ public class Tester {
 		client.submitCustomRequest(resource.getId(), "Change storage", data);
 	}
 	
+	private static void testGetResourceConsumption(VROPSClient vrops, String vmName) {
+		System.out.println("\n***** Test resource consumption *****");
+		ResourceConsumption rc = vrops.getVMMetricsByName(vmName);
+		System.out.println("cpu: " + rc.getCpuMHz() + " memory: " + rc.getMemoryKB() + " storage: " + rc.getStorageMB());
+	}
+	
+	private static void testGetGroupConsumption(VROPSClient vrops, String ait) {
+		System.out.println("\n***** Test group resource consumption *****");
+		AggregateResourceConsumption rcs = vrops.getGroupConsumption(ait);
+		for(Map.Entry<String, ResourceConsumption> entry : rcs.getMachines().entrySet()) {
+			System.out.println(entry.getKey() + " cpu: " + entry.getValue().getCpuMHz() + " memory: " +entry.getValue().getMemoryKB() + " storage: " + entry.getValue().getStorageMB());
+		}
+	}
+	
 	public static void main(String[] args) throws Exception {
 		System.out.println("***** Login *****");
-		POCClient client = new POCClient(args[0], args[1], args[2], args[3]);
+		POCClient client = new POCClient(args[0], args[1], args[2], args.length == 4 ? args[3] : null);
 		testGetCatalogItems(client); 
 		testGetResources(client);
 		testGetBusinessGroups(client, args[3]);
-		//testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox");
+		testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
 		testGetDay2Operations(client, "dev-0091"); 
 		//testReconfigureMachine(client, "dev-0092", new MachineConfiguration(3, 1024, 60, null));
 		testGetDay2Operations(client, "dev-0091"); 
@@ -156,5 +175,8 @@ public class Tester {
 		testGetReservationPolicies(client);
 		testGetMachineInfo(client, "dev-0091");	
 		testMigrateStorage(client, "dev-0091");
+		VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", "VMware1!");
+		testGetResourceConsumption(vrops, "dev-0091");
+		testGetGroupConsumption(vrops, "1234");
 	}
 }
