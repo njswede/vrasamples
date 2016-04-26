@@ -147,6 +147,15 @@ public class Tester {
 		client.submitCustomRequest(resource.getId(), "Change storage", data);
 	}
 	
+	private static void testChangeProperties(POCClient client, String machineName, String key, String value) {
+		System.out.println("\n***** Test change properties *****");
+		Collection<CatalogResource> resources = client.getCatalogResources(machineName, 1);
+		CatalogResource resource = resources.iterator().next();
+		Map<String, String> properties = new HashMap<String, String>();
+		properties.put(key, value);
+		client.requestPropertyChange(resource.getId(), properties);
+	}
+	
 	private static void testGetResourceConsumption(VROPSClient vrops, String vmName) {
 		System.out.println("\n***** Test resource consumption *****");
 		ResourceConsumption rc = vrops.getVMMetricsByName(vmName);
@@ -166,20 +175,21 @@ public class Tester {
 	public static void main(String[] args) throws Exception {
 		System.out.println("***** Login *****");
 		POCClient client = new POCClient(args[0], args[1], args[2], args.length == 4 ? args[3] : null);
-		testGetCatalogItems(client); 
-		testGetResources(client);
-		testGetBusinessGroups(client, args[3]);
-		testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
-		testGetDay2Operations(client, "dev-0091"); 
+		//testGetCatalogItems(client); 
+		//testGetResources(client);
+		//testGetBusinessGroups(client, args[3]);
+		//testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
+		//testGetDay2Operations(client, "dev-0091"); 
 		//testReconfigureMachine(client, "dev-0092", new MachineConfiguration(3, 1024, 60, null));
 		testGetDay2Operations(client, "dev-0091"); 
 		//testMachineReprovision(client, "dev-0092");
 		//testDestroyMachine(client, "dev-0100");
-		testGetReservationPolicies(client);
-		testGetMachineInfo(client, "dev-0091");	
-		testMigrateStorage(client, "dev-0091");
-		VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", "VMware1!");
-		testGetResourceConsumption(vrops, "dev-0091");
-		testGetGroupConsumption(vrops, "1234");
+		//testGetReservationPolicies(client);
+		//testGetMachineInfo(client, "dev-0091");	
+		//testMigrateStorage(client, "dev-0091");
+		testChangeProperties(client, "dev-0132", "bac_tag_ait", "1111");
+		//VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", "VMware1!");
+		//testGetResourceConsumption(vrops, "dev-0091");
+		//testGetGroupConsumption(vrops, "1234");
 	}
 }

@@ -230,6 +230,26 @@ public class POCClient {
 		return this.submitResourceRequest(machineId, request);
 	}
 	
+	
+	public URI requestPropertyChange(String machineId, Map<String, String> properties) {
+		CatalogResourceRequest request = this.getTemplate(machineId, "Infrastructure.Machine.Action.Reconfigure");
+		Map<String, Object> data = request.getData();
+		data.put("allowForceShutdown", false); // Allow shutdown
+		data.put("Cafe.Shim.VirtualMachine.Reconfigure.AllowForceShutdown", "False");
+		data.put("Cafe.Shim.VirtualMachine.Reconfigure.Requestor", 1);
+		data.put("powerActionSelector", 0); // Power-off allowed
+		Collection<Map<String, Object>> propList = (Collection<Map<String, Object>>) data.get("customProperties");
+		for(Map<String, Object> propRecord : propList) {
+			if(!"Infrastructure.CustomProperty".equals(propRecord.get("classId"))) 
+				continue;
+			Map<String, String> prop = (Map<String, String>) propRecord.get("data");
+			String name = prop.get("id");
+			if(properties.containsKey(name)) 
+				prop.put("value", properties.get(name));
+		}
+		return this.submitResourceRequest(machineId, request);
+	}
+	
 	/**
 	 * Submits a custom request, i.e. an XaaS day 2 operation.
 	 * 
