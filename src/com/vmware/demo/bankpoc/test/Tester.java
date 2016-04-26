@@ -191,7 +191,7 @@ public class Tester {
 		testGetMachineInfo(client, "dev-0091");	
 		testMigrateStorage(client, "dev-0091", "vivaldi");
 		testChangeProperties(client, "dev-0134", "bac_tag_ait1", "1113");
-		//VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", "VMware1!");
+		//VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", args[2]);
 		//testGetResourceConsumption(vrops, "dev-0091");
 		//testGetGroupConsumption(vrops, "1234");
 	}
