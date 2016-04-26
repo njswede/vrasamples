@@ -115,7 +115,7 @@ public class VROPSClient {
 		double totMem = 0.0;
 		double totStorage = 0.0;
 		Map<String, ResourceConsumption> machines = new HashMap<String, ResourceConsumption>();
-		ResourceDto res = this.findResourceByName("Environment", "bac_tag_" + tagName + "-" + tagValue);
+		ResourceDto res = this.findResourceByName("Environment", tagName + "-" + tagValue);
 		ResourcesClient rc = vrops.resourcesClient();
 		PageInfo page = new PageInfo(0, 10000, 10000);
 		ResourceRelationDto children = rc.getChildren(res.getIdentifier(), page);

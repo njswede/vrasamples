@@ -18,6 +18,8 @@ import java.util.Set;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.cafe.consumer.ConsumerService;
 import com.vmware.vcac.authentication.rest.client.service.SubtenantService;
 import com.vmware.vcac.authentication.rest.stubs.Subtenant;
@@ -231,7 +233,16 @@ public class POCClient {
 	}
 	
 	
-	public URI requestPropertyChange(String machineId, Map<String, String> properties) {
+	public URI requestPropertyChange(String machineId, Map<String, String> properties) throws JsonProcessingException  {
+		// Update vR Ops grouping
+		//
+		Map<String, Object> payload = new HashMap<String, Object>();
+		ObjectMapper om = new ObjectMapper();
+		payload.put("properties", om.writer().writeValueAsString(properties));
+		this.submitCustomRequest(machineId, "Refresh vR Ops grouping", payload);
+		
+		// Update the properties in vRA
+		//
 		CatalogResourceRequest request = this.getTemplate(machineId, "Infrastructure.Machine.Action.Reconfigure");
 		Map<String, Object> data = request.getData();
 		data.put("allowForceShutdown", false); // Allow shutdown
@@ -244,8 +255,26 @@ public class POCClient {
 				continue;
 			Map<String, String> prop = (Map<String, String>) propRecord.get("data");
 			String name = prop.get("id");
-			if(properties.containsKey(name)) 
+			if(properties.containsKey(name))  {
+				// Set property if found and remove it from the list
+				// of properties to set.
+				//
 				prop.put("value", properties.get(name));
+				properties.remove(name);
+			}
+		}
+		
+		// Any remaining values in "properties" are net new and 
+		// need to be created separately
+		//
+		for(Map.Entry<String, String> entry : properties.entrySet()) {
+			Map<String, Object> propRecord = new HashMap<String, Object>();
+			propRecord.put("classId", "Infrastructure.CustomProperty");
+			Map<String, String> prop = new HashMap<String, String>();
+			prop.put("id", entry.getKey());
+			prop.put("value", entry.getValue());
+			propRecord.put("data", prop);
+			propList.add(propRecord);
 		}
 		return this.submitResourceRequest(machineId, request);
 	}
@@ -339,6 +368,13 @@ public class POCClient {
 		return catalogClient.get("/consumer/resourceViews/" + machineId, HashMap.class);
 	}
 	
+	/**
+	 * Returns a client to a vR Ops system
+	 * @param url vR Ops URL	
+	 * @param username vR Ops username
+	 * @param password vR Ops password
+	 * @return
+	 */
 	public VROPSClient createVROPSClient(String url, String username, String password) {
 		return new VROPSClient(url, username, password, false);
 	}
@@ -396,6 +432,4 @@ public class POCClient {
 		payload.put("type", "com.vmware.vcac.catalog.domain.request.CatalogResourceRequest");	
 		return catalogClient.post("consumer/resources/" + machineId + "/actions/" + request.getActionId() + "/requests", payload);
 	}
-	
-	
 }

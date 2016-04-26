@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.vmware.demo.bankpoc.client.AggregateResourceConsumption;
 import com.vmware.demo.bankpoc.client.MachineConfiguration;
 import com.vmware.demo.bankpoc.client.POCClient;
@@ -130,6 +131,7 @@ public class Tester {
 		Map<String, Object> details = client.getMachineDetails(resource.getId());
 		Map<String, Object> data = (Map<String, Object>) details.get("data");
 		System.out.println(resource.getName() + ": " + data.get("MachineCPU") + "/" + data.get("MachineMemory"));
+		System.out.println(details);
 	}
 	
 	private static void testMachineReprovision(POCClient client, String machineName) {
@@ -139,15 +141,16 @@ public class Tester {
 		client.requestMachineReprovision(resource.getId());
 	}
 	
-	private static void testMigrateStorage(POCClient client, String machineName) {
+	private static void testMigrateStorage(POCClient client, String machineName, String datastoreName) {
+		System.out.println("\n***** Test migrate storage *****");
 		Collection<CatalogResource> resources = client.getCatalogResources(machineName, 1);
 		CatalogResource resource = resources.iterator().next();
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("targetDatastore", "123");
+		data.put("targetDatastoreName", datastoreName);
 		client.submitCustomRequest(resource.getId(), "Change storage", data);
 	}
 	
-	private static void testChangeProperties(POCClient client, String machineName, String key, String value) {
+	private static void testChangeProperties(POCClient client, String machineName, String key, String value) throws JsonProcessingException {
 		System.out.println("\n***** Test change properties *****");
 		Collection<CatalogResource> resources = client.getCatalogResources(machineName, 1);
 		CatalogResource resource = resources.iterator().next();
@@ -185,9 +188,9 @@ public class Tester {
 		//testMachineReprovision(client, "dev-0092");
 		//testDestroyMachine(client, "dev-0100");
 		//testGetReservationPolicies(client);
-		//testGetMachineInfo(client, "dev-0091");	
-		//testMigrateStorage(client, "dev-0091");
-		testChangeProperties(client, "dev-0132", "bac_tag_ait", "1111");
+		testGetMachineInfo(client, "dev-0091");	
+		testMigrateStorage(client, "dev-0091", "vivaldi");
+		testChangeProperties(client, "dev-0134", "bac_tag_ait1", "1113");
 		//VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", "VMware1!");
 		//testGetResourceConsumption(vrops, "dev-0091");
 		//testGetGroupConsumption(vrops, "1234");
