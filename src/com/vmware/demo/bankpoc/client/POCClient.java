@@ -185,6 +185,7 @@ public class POCClient {
 	 * 
 	 * @param catalogItemId The ID of the catalog item to provision.
 	 * @param businessGroupId The business group to place the machine in. If null, the machine goes in the default business group of the blueprint.
+	 * @param numInstances The number of instances to provision.
 	 * @param config The machine configuration.
 	 * @param customProperties Custom properties (if any). Can be null if no custom properties are needed.
 	 * @return

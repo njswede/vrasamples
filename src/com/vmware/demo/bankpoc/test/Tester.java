@@ -181,7 +181,7 @@ public class Tester {
 		//testGetCatalogItems(client); 
 		//testGetResources(client);
 		//testGetBusinessGroups(client, args[3]);
-		//testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
+		testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
 		//testGetDay2Operations(client, "dev-0091"); 
 		//testReconfigureMachine(client, "dev-0092", new MachineConfiguration(3, 1024, 60, null));
 		testGetDay2Operations(client, "dev-0091"); 
