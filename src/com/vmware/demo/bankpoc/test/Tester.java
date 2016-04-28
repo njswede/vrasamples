@@ -183,7 +183,7 @@ public class Tester {
 		//testGetBusinessGroups(client, args[3]);
 		//testRequestMachine(client, args[3], "CentOS7 Minmal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
 		//testGetDay2Operations(client, "dev-0091"); 
-		testReconfigureMachine(client, "dev-0142", new MachineConfiguration(3, 1024, 60, null));
+		testReconfigureMachine(client, "dev-0145", new MachineConfiguration(3, 1024, 40, null));
 		testGetDay2Operations(client, "dev-0091"); 
 		//testMachineReprovision(client, "dev-0092");
 		//testDestroyMachine(client, "dev-0100");
