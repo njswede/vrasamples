@@ -65,7 +65,7 @@ public class Tester {
 		// Set up configuration
 		//
 		HashMap<String, MachineConfiguration> config = new HashMap<String, MachineConfiguration>();
-		config.put("vSphere_Machine_1", new MachineConfiguration(2, 1024, 60, policyId));
+		config.put("Amazon_Machine_1", new MachineConfiguration(2, 7680, 60, policyId));
 		Map<String, Object> props = new HashMap<String, Object>();
 		//props.put("Hostname", "test123");
 		props.put("ou", ou);
@@ -178,12 +178,12 @@ public class Tester {
 	public static void main(String[] args) throws Exception {
 		System.out.println("***** Login *****");
 		POCClient client = new POCClient(args[0], args[1], args[2], args.length == 4 ? args[3] : null);
-		//testGetCatalogItems(client); 
-		//testGetResources(client);
+		testGetCatalogItems(client); 
+		testGetResources(client);
 		//testGetBusinessGroups(client, args[3]);
-		testRequestMachine(client, args[3], "CentOS7 Minimal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
+		//testRequestMachine(client, args[3], "CentOS7 Minmal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
 		//testGetDay2Operations(client, "dev-0091"); 
-		//testReconfigureMachine(client, "dev-0092", new MachineConfiguration(3, 1024, 60, null));
+		testReconfigureMachine(client, "dev-0142", new MachineConfiguration(3, 1024, 60, null));
 		testGetDay2Operations(client, "dev-0091"); 
 		//testMachineReprovision(client, "dev-0092");
 		//testDestroyMachine(client, "dev-0100");

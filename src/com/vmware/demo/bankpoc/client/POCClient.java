@@ -12,6 +12,7 @@ package com.vmware.demo.bankpoc.client;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -226,6 +227,8 @@ public class POCClient {
 		data.put("cpu", config.getNumCPUs());
 		data.put("memory", config.getMemoryMB());
 		data.put("allowForceShutdown", allowShutdown); // Allow shutdown
+		List<Map<String, Map<String, Object>>> disks = (List<Map<String, Map<String, Object>>>) data.get("disks");
+		disks.get(0).get("data").put("size", config.getDiskGB());
 		data.put("Cafe.Shim.VirtualMachine.Reconfigure.AllowForceShutdown", allowShutdown ? "True" : "False");
 		data.put("Cafe.Shim.VirtualMachine.Reconfigure.Requestor", 1);
 		//data.put("executionSelector", 1); // Immediate shutdown
