@@ -2,6 +2,7 @@ package com.vmware.demo.bankpoc.test;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,12 @@ import com.vmware.vcac.catalog.rest.stubs.CatalogResourceView;
 import com.vmware.vcac.catalog.rest.stubs.ConsumerResourceOperation;
 import com.vmware.vcac.catalog.rest.stubs.Request;
 import com.vmware.vcac.catalog.rest.stubs.v7_0.CatalogResource;
+import com.vmware.vcac.platform.content.literals.DecimalLiteral;
+import com.vmware.vcac.platform.content.literals.LiteralMap;
+import com.vmware.vcac.platform.content.literals.MultipleLiteral;
+import com.vmware.vcac.platform.content.literals.SecureStringLiteral;
+import com.vmware.vcac.platform.content.literals.StringLiteral;
+import com.vmware.vcac.platform.content.schema.DataTypeId;
 import com.vmware.vcac.reservation.rest.stubs.ReservationPolicy;
 
 public class Tester {
@@ -65,7 +72,7 @@ public class Tester {
 		// Set up configuration
 		//
 		HashMap<String, MachineConfiguration> config = new HashMap<String, MachineConfiguration>();
-		config.put("Amazon_Machine_1", new MachineConfiguration(2, 7680, 60, policyId));
+		config.put("vSphere_Machine_1", new MachineConfiguration(1, 1024, 60, policyId));
 		Map<String, Object> props = new HashMap<String, Object>();
 		//props.put("Hostname", "test123");
 		props.put("ou", ou);
@@ -175,24 +182,30 @@ public class Tester {
 		System.out.println("Totals: " + totals.getCpuMHz() + " memory: " +totals.getMemoryKB() + " storage: " + totals.getStorageMB());
 	}
 	
+	public static void testMigration(POCClient client, String tenant, String businessGroup, String vCenterHost, String username, String password, String sourceName, String targetName, String folder, String cluster, String storage, String network, int cpu, int memory) {
+		System.out.println("\n***** Test migration *****");
+		client.requestMigration(vCenterHost, tenant, businessGroup, username, password, sourceName, targetName, folder, cluster, storage, network, cpu, memory);
+	}
+	
 	public static void main(String[] args) throws Exception {
 		System.out.println("***** Login *****");
 		POCClient client = new POCClient(args[0], args[1], args[2], args.length == 4 ? args[3] : null);
 		testGetCatalogItems(client); 
 		testGetResources(client);
-		//testGetBusinessGroups(client, args[3]);
-		//testRequestMachine(client, args[3], "CentOS7 Minmal", "East", "ThisIsMyOU", "Development Sandbox", "1234");
+		testGetBusinessGroups(client, args[3]);
+		testRequestMachine(client, args[3], "CentOS7", "East", "ThisIsMyOU", "Development Sandbox", "1234");
 		//testGetDay2Operations(client, "dev-0091"); 
 		//testReconfigureMachine(client, "dev-0145", new MachineConfiguration(3, 1024, 40, null));
-		testGetDay2Operations(client, "dev-0091"); 
-		testMachineReprovision(client, "dev-0142");
+		//testGetDay2Operations(client, "dev-0091"); 
+		//testMachineReprovision(client, "dev-0142");
 		//testDestroyMachine(client, "dev-0100");
 		//testGetReservationPolicies(client);
-		testGetMachineInfo(client, "dev-0091");	
-		testMigrateStorage(client, "dev-0091", "vivaldi");
-		testChangeProperties(client, "dev-0134", "bac_tag_ait1", "1113");
+		//testGetMachineInfo(client, "dev-0091");	
+		//testMigrateStorage(client, "dev-0091", "vivaldi");
+		//testChangeProperties(client, "dev-0134", "bac_tag_ait1", "1113");
 		//VROPSClient vrops = client.createVROPSClient("https://vrops-01.rydin.nu/suite-api", "admin", args[2]);
 		//testGetResourceConsumption(vrops, "dev-0091");
 		//testGetGroupConsumption(vrops, "1234");
+		//testMigration(client, "rydin", "Development", "vc-01.rydin.nu", args[1], args[2], "dev-0091", "success-16", "VRM", "workload-1", "vivaldi", "tenants-01", 1, 512);
 	}
 }

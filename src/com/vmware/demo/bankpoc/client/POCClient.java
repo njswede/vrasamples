@@ -10,7 +10,10 @@
 package com.vmware.demo.bankpoc.client;
 
 import java.net.URI;
+import java.nio.channels.IllegalSelectorException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,16 +33,28 @@ import com.vmware.vcac.catalog.rest.client.service.impl.ConsumerRequestService;
 import com.vmware.vcac.catalog.rest.client.service.impl.ConsumerResourceService;
 import com.vmware.vcac.catalog.rest.stubs.CatalogItem;
 import com.vmware.vcac.catalog.rest.stubs.CatalogItemProvisioningRequest;
+import com.vmware.vcac.catalog.rest.stubs.CatalogItemRequest;
+import com.vmware.vcac.catalog.rest.stubs.CatalogOrganizationReference;
 import com.vmware.vcac.catalog.rest.stubs.CatalogResourceRequest;
 import com.vmware.vcac.catalog.rest.stubs.CatalogResourceView;
 import com.vmware.vcac.catalog.rest.stubs.ConsumerResourceOperation;
 import com.vmware.vcac.catalog.rest.stubs.Request;
+import com.vmware.vcac.catalog.rest.stubs.RequestState;
 import com.vmware.vcac.catalog.rest.stubs.v7_0.CatalogResource;
 import com.vmware.vcac.core.reservation.rest.client.service.ReservationPolicyService;
+import com.vmware.vcac.platform.content.literals.DecimalLiteral;
+import com.vmware.vcac.platform.content.literals.Literal;
+import com.vmware.vcac.platform.content.literals.LiteralMap;
+import com.vmware.vcac.platform.content.literals.LiteralVisitor;
+import com.vmware.vcac.platform.content.literals.MultipleLiteral;
+import com.vmware.vcac.platform.content.literals.SecureStringLiteral;
+import com.vmware.vcac.platform.content.literals.StringLiteral;
+import com.vmware.vcac.platform.content.schema.DataTypeId;
 import com.vmware.vcac.platform.rest.client.RestClient;
 import com.vmware.vcac.platform.rest.client.query.FilterParam;
 import com.vmware.vcac.platform.rest.client.query.OdataQuery;
 import com.vmware.vcac.platform.rest.client.query.PageOdataRequest;
+import com.vmware.vcac.platform.rest.data.LabelledReference;
 import com.vmware.vcac.platform.security.SslCertificateTrust;
 import com.vmware.vcac.reservation.rest.stubs.ReservationPolicy;
 
@@ -213,6 +228,34 @@ public class POCClient {
 		return entitledItemsService.submitCatalogItemProvisionRequest(request);
 	}
 	
+	public URI requestCustomResource(String catalogItemName, String tenantName, String businessGroupName, LiteralMap parameters) {
+		Collection<Subtenant> bgs = this.getBusinessGroups(tenantName, businessGroupName, 1);
+		if(bgs.size() == 0)
+			throw new IllegalArgumentException("Busniess group " + businessGroupName + " not found");
+		Collection<CatalogItem> items = this.getCatalogItems(catalogItemName, 1);
+		if(items.size() == 0)
+			throw new IllegalArgumentException("Catalog item " + catalogItemName + " not found");
+		Subtenant bg = bgs.iterator().next();
+		CatalogItem item = items.iterator().next();
+		ConsumerRequestService requestClient = new ConsumerRequestService(catalogClient);
+		CatalogItemRequest request = new CatalogItemRequest();
+		request.setCatalogItemRef(new LabelledReference(item.getId(), item.getName()));
+		CatalogOrganizationReference org = new CatalogOrganizationReference();
+		org.setTenantRef(tenantName);
+		org.setSubtenantRef(bg.getId());
+		request.setOrganization(org);
+		request.setState(RequestState.SUBMITTED);
+		request.setRequestData(parameters);
+		
+		try {
+			System.out.println(new ObjectMapper().writeValueAsString(request));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return requestClient.createRequest(request);
+	}
+	
 	/**
 	 * Submits a request for a machine reconfiguration
 	 * 
@@ -383,6 +426,27 @@ public class POCClient {
 		return new VROPSClient(url, username, password, false);
 	}
 	
+	public URI requestMigration(String vCenterHost, String tenant, String businessGroup, String username, String password, String sourceName, String targetName, String folder, String cluster, String storage, String network, int cpu, int memory) {
+		LiteralMap parameters = new LiteralMap();
+		//Map<String, Object> parameters = new HashMap<String, Object>();
+		parameters.put("provider-sourceVCenterUser", new StringLiteral(username));
+		parameters.put("provider-sourceVCenterPassword", new SecureStringLiteral(password));
+		parameters.put("provider-targetFolderName", new StringLiteral(folder));
+		parameters.put("provider-targetClusterName", new StringLiteral(cluster));
+		parameters.put("provider-targetStorageName", new StringLiteral(storage));
+		parameters.put("provider-targetCPU", new DecimalLiteral((double) cpu));
+		parameters.put("provider-targetMemory", new DecimalLiteral((double) memory));
+		parameters.put("provider-targetClusterName", new StringLiteral(cluster));
+		MultipleLiteral networks = new MultipleLiteral(Collections.singletonList(new StringLiteral(network)), DataTypeId.STRING);
+		parameters.put("provider-targetPortgroupNames", networks);
+		parameters.put("provider-customizationSpecName", new StringLiteral("LinuxDHCP"));
+		parameters.put("provider-targetVCName", new StringLiteral(vCenterHost));
+		parameters.put("provider-sourceVCName", new StringLiteral(vCenterHost)); 
+		parameters.put("provider-targetVMName", new StringLiteral(targetName));
+		parameters.put("provider-sourceVMName", new StringLiteral(sourceName));
+		return this.requestCustomResource("Migrate Legacy VM (API friendly)", tenant, businessGroup, parameters);
+	}
+	
 	/**
 	 * Applies machine configuration and custom properties to a provisioning request.
 	 * 
@@ -435,5 +499,23 @@ public class POCClient {
 		payload.put("data", request.getData());
 		payload.put("type", "com.vmware.vcac.catalog.domain.request.CatalogResourceRequest");	
 		return catalogClient.post("consumer/resources/" + machineId + "/actions/" + request.getActionId() + "/requests", payload);
+	}
+	
+	protected LiteralMap convertPropertiesToLiteralMap(Map<String, Object> properties) {
+		LiteralMap result = new LiteralMap(properties.size());
+		for(Map.Entry<String, Object> entry : properties.entrySet()) {
+			Object value = entry.getValue();
+			String key = "provider-" + entry.getKey();
+			if(value instanceof Collection) {
+				List<Literal> content = new ArrayList<Literal>();
+				for(Object item : (Collection) value) 
+					content.add(new StringLiteral(item.toString())); // Only strings are supported for now.
+				result.put(key, new MultipleLiteral(content, DataTypeId.STRING));
+			} else if(value instanceof Number){
+				result.put(key, new DecimalLiteral(Double.valueOf(value.toString())));
+			} else
+				result.put(key, new StringLiteral(value.toString()));
+		}
+		return result;
 	}
 }
